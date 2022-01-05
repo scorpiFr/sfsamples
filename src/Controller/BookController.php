@@ -67,7 +67,7 @@ class BookController extends AbstractController
     /**
      * create action
      *
-     * @Route("/book/createaction", name="bookcreateaction")
+     * @Route("/book/createaction", name="bookcreateaction", methods={"POST"})
      */
     public function createAction(Request $request)
     {
@@ -149,9 +149,7 @@ class BookController extends AbstractController
 
         // get books
         $books = $bookRepository->getAll();
-
-        $b = $bookRepository->removeFromIds([5, 6]);
-        dump($b); die("ok");
+        
         // template
         $twigData = ['books' => $books];
         $html = $this->get('twig')->render('twig/book/list.html.twig', $twigData);
