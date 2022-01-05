@@ -1,0 +1,267 @@
+form symfony :
+
+
+entite : 
+<?php
+// src/Entity/BookFormEntity.php
+namespace App\Entity;
+
+use Symfony\Component\Validator\Validation;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
+
+class BookFormEntity
+{
+    /**
+     * @Assert\Length(
+     *     min = 1,
+     *     max = 255,
+     *     minMessage = "Ce titre est trop court",
+     *     maxMessage = "Ce titre est trop long"
+     * )
+     */
+    private string $title;
+
+    private string $abstract;
+
+    /**
+     * @Assert\NotBlank(message="Veuillez choisir un auteur.")
+     * @Assert\Length(
+     *     min = 1,
+     *     minMessage = "Veuillez choisir un auteur."
+     * )
+     */
+    private int $authorId;
+
+    /**
+     * @return int
+     */
+    public function getAuthorId(): int
+    {
+        return $this->authorId;
+    }
+
+    /**
+     * @param int $authorId
+     * @return BookFormEntity
+     */
+    public function setAuthorId(int $authorId): BookFormEntity
+    {
+        $this->authorId = $authorId;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    /**
+     * @param string $title
+     * @return BookFormEntity
+     */
+    public function setTitle(string $title): BookFormEntity
+    {
+        $this->title = $title;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAbstract(): string
+    {
+        return $this->abstract;
+    }
+
+    /**
+     * @param string $abstract
+     * @return BookFormEntity
+     */
+    public function setAbstract(string $abstract): BookFormEntity
+    {
+        $this->abstract = $abstract;
+        return $this;
+    }
+    
+}
+
+
+
+formulaire : 
+<?php
+// src/Form/CreateBook.php
+namespace App\Form;
+
+use App\Entity\BookFormEntity;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+
+class CreateBookType extends AbstractType
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $builder
+            ->add('authorId', IntegerType::class)
+            ->add('title', TextType::class)
+            ->add('abstract', TextareaType::class)
+            ->add('enregistrer', SubmitType::class)
+        ;
+    }
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults([
+            'data_class' => BookFormEntity::class,
+        ]);
+    }
+}
+
+
+
+
+Controlleur : 
+<?php
+// src/Controller/BookController.php
+namespace App\Controller;
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Entity\BookFormEntity;
+use App\Form\CreateBookType;
+
+class BookController extends AbstractController
+{
+    /**
+     * create form
+     *
+     * @Route("/book/createform", name="bookcreateform")
+     */
+    public function myCreateForm(Request $request)
+    {
+        // parameters
+        $entityClass = 'BookFormEntity';
+        $formClass = 'CreateBookType';
+        $flashbagName = 'bookcreateform';
+        $templatePath = 'twig/book/createform.html.twig';
+
+        // initialise
+        $data = new BookFormEntity();
+        $errors = [];
+
+        // flashbag verification
+        $flashBag = $request->getSession()->get('bookcreateform');
+        if (!empty($flashBag)) {
+            if (isset($flashBag['data']) && !empty($flashBag['data'])) {
+                $data = $flashBag['data'];
+            }
+            if (isset($flashBag['errors']) && !empty($flashBag['errors'])) {
+                $errors = $flashBag['errors'];
+            }
+        }
+        $request->getSession()->set('bookcreateform', null);
+
+
+        $form = $this->createForm(CreateBookType::class, $data);
+
+        $twigData = ['form' => $form->createView(), 'errors'=>$errors];
+        $html = $this->get('twig')->render('twig/book/createform.html.twig', $twigData);
+        return new Response($html);
+    }
+    /**
+     * create action
+     *
+     * @Route("/book/createaction", name="bookcreateaction")
+     */
+    public function createAction(Request $request)
+    {
+        // initialize
+        {
+            $book = new BookFormEntity();
+            $form = $this->createForm(CreateBookType::class, $book);
+            $form->handleRequest($request);
+        }
+
+        // not submitted
+        if (!$form->isSubmitted())
+        {
+            return $this->redirectToRoute('bookcreateform', [], Response::HTTP_FOUND); // 302
+        }
+
+        // not correct
+        if (!$form->isValid()) {
+            $request->getSession()->set('bookcreateform', [
+                'data' => $book,
+                'errors' => [
+                    'authorId' => "Veuillez choisir un auteur."
+                ]
+            ]);
+        }
+
+        // processing
+        dump($book);
+        die("ok");
+    }
+}
+
+
+template : 
+{# /templates/twig/book/createform.html.twig #}
+<html>
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        {{ form_start(form,
+            {
+                'action': path('bookcreateaction'),
+                'method': 'POST',
+                'attr': {'novalidate': 'novalidate'}
+            }
+        ) }}
+            {{ form_row(form.title) }}
+            {{ form_row(form.abstract) }}
+            {{ form_row(form.authorId) }}
+            {%  if errors.authorId %}
+                Vous devez renseigner un auteur
+            {% endif %}
+            {{ form_row(form.enregistrer) }}
+        {{ form_end(form) }}
+    </div>
+</div>
+
+</body>
+</html>
+
+
+
+config : // config/packages/twig.yaml
+twig:
+    default_path: '%kernel.project_dir%/templates'
+    debug: '%kernel.debug%'
+    strict_variables: '%kernel.debug%'
+    form_themes: ['bootstrap_4_layout.html.twig'] # accepte plusieurs thèmes
+	
+	
+	

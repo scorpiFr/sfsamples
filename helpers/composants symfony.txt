@@ -1,0 +1,254 @@
+composants symfony : 
+- request, response
+- dependency injection
+- event dispatcher
+- mailer
+- workflow
+- messenger
+- assets
+- form
+- serializer
+- string
+- validator
+- profiler (debugger)
+- doctrine
+
+liste des composants : https://symfony.com/components
+
+best bundles : 
+FOSUserBundle
+FOSRestBundle : permet de faire un depart d'api avec pas mal de choses de gereer - formats de retours demandees.
+serializer...
+LiipImagineBundle : retravail des images
+knpPaginator
+ 
+
+
+
+
+cours : https://openclassrooms.com/fr/courses/5489656-construisez-un-site-web-a-l-aide-du-framework-symfony-5/5489663-realisez-votre-premiere-page
+
+creer un projet : composer create-project symfony/website-skeleton mon-super-projet
+
+lancer un projet (depuis le repertoire du projet) : symfony server:start
+puis navigateur : http://localhost:8000/  (ou si ca marche pas : php -S localhost:8000 -t public)
+
+
+**repertoires symfony : 
+- bin : binaires (ex : console)
+- config : configurations
+- public : ne contiens que le controlleur frontal
+- migrations : migrations db
+- src : code de l'appli Controllers + Entities + repositories
+- tests (tests unitaires ou comportementaux)
+- templates
+- translations
+- var (cache, logs, sessions)
+- vendor (tierces parties)
+
+
+creer une api : composer require api
+
+
+Request : recupere des choses de l'url. ex : 
+$request = Request::createFromGlobals();
+$name = $request->get('name');
+ou $request->getMethod(); // e.g. GET, POST, PUT, DELETE ou HEAD
+$request->getPathInfo(); // url demandee par l'utilisateur. ex: "/"
+
+
+Response : definit la reponse. ex : 
+$response = new Response();
+$response->setStatusCode(Response::HTTP_OK);
+$response->headers->set('Content-Type', 'text/html');
+
+$response->setContent(
+    '<html><body>Hello'
+    . $name
+    .'</body></html>'
+);
+
+// Retourne une réponse HTTP valide
+$response->send();
+
+
+
+creer une route : 
+composer require annotations
+
+namespace App\Controller;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+
+class HomeController extends AbstractController
+{
+    /**
+     * Page d'accueil
+     * 
+     * @Route("/home", name="accueil")
+     */
+    public function home()
+    {
+        return new Response(" Bienvenue sur la page d'accueil ! ");
+    }
+    /**
+     * Page d'accès à un article
+     * 
+     * @Route("/article/{articleId<\d+>}", name='show-article', methods={"GET"})
+     */
+    public function show($articleId)
+    {
+        // Nous retrouvons la valeur de la variable $articleId à partir de l'URI
+        // Par exemple /article/1234 => $articleId = '1234'
+
+        return new Response(" Voici le contenu de l'article avec l'ID $articleId ");
+    }
+}
+
+-------------------------------------------
+
+creer un service : 
+- creer un objet dans src/Services/MyService.php
+- verifier son service : php bin/console debug:container App\Services\MyService
+- si besoin declarer les variables constructeurs dans config/services.yaml:
+parameters:
+    myService_waiting_time: 2
+	...
+    App\Services\MyService:
+        arguments:
+            $waitingTime: '%myService_waiting_time%'
+
+
+----------------------------------------
+EventDispatcher : ecrire dans un fichier apres l'envoi de la reponse :
+
+- creer le service :
+// src/EventListener/TerminationListener.php
+namespace App\EventListener;
+use Symfony\Component\HttpKernel\Event\TerminateEvent;
+
+class TerminationListener
+{
+    public function onTerminateEvent(TerminateEvent $event)
+    {
+        // verifications
+        $request = $event->getRequest();
+        if ($request->get('_route') != 'articles') {
+            return;
+        }
+
+        // actions
+        file_put_contents("E:/pro/logs/test.log", "toto\n", FILE_APPEND);
+    }
+}
+
+- linker le service a l'event dans services.yaml
+services:
+    App\EventListener\TerminationListener:
+        tags:
+            - { 'name': 'kernel.event_listener', 'event': 'kernel.terminate', 'method': 'onTerminateEvent' }
+
+
+- Note : on peut aussi crer des events specifiques, les lancer depuis des controlleurs et mettre des objets en listener.
+
+---------------------------------------------------
+TWIG
+
+twig est un moteur de templates.
+vous pouvez
+- creer des blocs et les surcharger dans un template extention
+- creer des macros, filtres ou fonctions (ex: 2|stars)
+
+
+{{ ... }}  permet l'affichage d'une expression ;
+{% ... %}  exécute une action ;
+{# ... #}  n'est jamais exécuté, c'est utilisé pour des commentaires.
+
+Ex : 
+// src/Controller/TwigController.php
+namespace App\Controller;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+class TwigController extends AbstractController
+{
+    /**
+     * Page d'accueil
+     *
+     * @Route("/twig", name="twig_test")
+     */
+    public function test()
+    {
+        $data = ['name' => 'Camille'];
+        $html = $this->get('twig')->render('twig/test.html.twig', $data);
+        return new Response($html);
+    }
+}
+
+{# /templates/twig/test.html.twig #}
+Hello {{ name }}
+
+
+
+
+--- formulaires de creation :
+
+// a completer : https://openclassrooms.com/fr/courses/5489656-construisez-un-site-web-a-l-aide-du-framework-symfony-5/5517026-interagissez-avec-vos-utilisateurs
+
+
+--------------
+installer doctrine :
+composer req orm
+
+.env:
+DATABASE_URL="mysql://root:root@127.0.0.1:3306/testsf?serverVersion=mariadb-10.4.13&charset=utf8"
+
+classe doctrine : 
+<?php
+
+namespace AppBundle\Entity;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+* @ORM\Entity()
+* @ORM\Table(name="blog_article")
+* */
+class Article
+{
+    /**
+    * @ORM\Id()
+    * @ORM\GeneratedValue(strategy="AUTO")
+    * @ORM\Column(type="integer")
+    */
+    public $id;
+
+    /**
+    * @ORM\Column(type="string")
+    */
+    public $title;
+
+    /**
+    * @ORM\Column(type="text")
+    */
+    public $content;
+
+    /**
+    * @ORM\Column(type="datetime", name="date")
+    */
+    public $date;
+}
+
+faire creer son schema : php bin/console doctrine:schema:create
+voir les requetes du schema : php bin/console doctrine:schema:create --dump-sql
+
+mettre a jour : php bin/console doctrine:schema:update --dump-sql
+php bin/console doctrine:schema:update --force
+
+
+-- la suite
+doctrine getCollection : getFromId, getFromIds, Search, getMaxId, GetNbrRows...
+
+
