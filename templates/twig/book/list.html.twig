@@ -1,0 +1,30 @@
+{# /templates/twig/book/list.html.twig #}
+
+<html>
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+
+{% if not books %}
+    Books not found
+{% else %}
+<table>
+    <tr>
+        <th>Id</th>
+        <th>Title</th>
+        <th>AuthorId</th>
+    </tr>
+    {% for book in books %}
+    <tr>
+        <td>{{book.id}}</td>
+        <td>{{book.title}}</td>
+        <td>{{book.authorId}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+
+</body>
+</html>

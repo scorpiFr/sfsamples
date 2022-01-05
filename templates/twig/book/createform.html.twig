@@ -1,0 +1,30 @@
+{# /templates/twig/book/createform.html.twig #}
+
+<html>
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        {{ form_start(form,
+            {
+                'action': path('bookcreateaction'),
+                'method': 'POST',
+                'attr': {'novalidate': 'novalidate'}
+            }
+        ) }}
+            {{ form_row(form.title) }}
+            {{ form_row(form.abstract) }}
+            {{ form_row(form.authorId) }}
+            {%  if errors.authorId is defined %}
+                Vous devez renseigner un auteur
+            {% endif %}
+            {{ form_row(form.enregistrer) }}
+        {{ form_end(form) }}
+    </div>
+</div>
+
+</body>
+</html>
