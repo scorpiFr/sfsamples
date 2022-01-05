@@ -1,0 +1,45 @@
+
+
+FOSUserBundle : gestion du cycle de vie d un user
+FOSrestbundle
+API Platform Bundle
+JMSSerializerBundle  : serializer
+KnpPaginatorBundle: pagination. a refaire.
+KnpGaufretteBundle: virtualisation de fichiers. sauvegarde dans plein de FS differents.
+KnpGaufretteBundle : logging via facebook, google, linkedin, github and others
+KnpGaufretteBundle : html to pdf
+
+
+
+Components : 
+Cache
+Console
+Event dispatcher
+form
+gmail bridge
+guzzle
+http fundation : request, response, session
+ldap
+lock
+mailchimp
+phpunit
+sendinblue
+serializer
+dumper
+
+
+
+
+notifier components
+allmysms
+amazon
+discord
+gitter
+google chat
+linkedin
+messenger
+telegram
+octopush
+sendinblue
+
+
